@@ -2,689 +2,416 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>نظام مواعيد المركز</title>
+
+  <!-- ===== Tailwind CSS ===== -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ===== خطّ عربي Tajawal ===== -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+
+  <!-- ===== Firebase v9 Initialization ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBinpejpZQv71xxhJrlYcET-uNLPL0pROY",
+      authDomain: "ynmo-center-scheduler.firebaseapp.com",
+      databaseURL: "https://ynmo-center-scheduler-default-rtdb.firebaseio.com",
+      projectId: "ynmo-center-scheduler",
+      storageBucket: "ynmo-center-scheduler.firebasestorage.app",
+      messagingSenderId: "287665928063",
+      appId: "1:287665928063:web:67f6bccd66a25ef0118c4a"
+    };
+    // تهيئة Firebase
+    window.appFirebase = initializeApp(firebaseConfig);
+    window.dbFirebase  = getDatabase(window.appFirebase);
+  </script>
+
+  <!-- ===== CSS لهوية المركز ===== -->
   <style>
-    /* ===== ألوان الهوية ===== */
-    :root {
-      --dark: #142445;
-      --accent: #8bd5c8;
-      --bg: #f9f1e5;
-      --text: #333;
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      font-family: 'Tajawal', sans-serif;
+      background-color: #F7F9FA;
+      color: #1F2937;
     }
-    body { margin:0; font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text); }
-    header { background:var(--dark); color:#fff; display:flex; align-items:center; padding:10px; }
-    header img { height:40px; margin-left:10px; }
-    header h1 { font-size:1.5rem; }
-    nav { display:flex; background:#fff; border-bottom:2px solid var(--accent); }
-    nav button { flex:1; padding:10px; border:none; background:none; cursor:pointer; color:var(--dark); }
-    nav button.active, nav button:hover { background:var(--accent); }
-    section { display:none; padding:20px; }
-    section.active { display:block; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-    th { background:var(--accent); }
-    button { padding:6px 12px; margin:4px; cursor:pointer; }
-    /* مودال مركزي */
-    #modal { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; }
-    #modal .content { background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px; }
-    #modal label { display:block; margin:8px 0; }
-    #modal input, #modal select { width:100%; padding:6px; }
+    :root {
+      --clr-primary:   #0B2545;  /* أزرق داكن */
+      --clr-accent:    #64C8B0;  /* لون المينت */
+      --clr-card-bg:   #FFFFFF;
+      --clr-border:    #E5E7EB;
+      --clr-header-bg: #0B2545;
+      --clr-toast-ok:  #34D399;
+      --clr-toast-err: #F87171;
+      --clr-toast-info:#FBBF24;
+    }
+    /* Header */
+    header {
+      background-color: var(--clr-header-bg);
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 0 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .logo-img {
+      position: absolute;
+      left: 1rem;
+      height: 32px;
+      width: auto;
+      object-fit: contain;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      margin: 0;
+    }
+
+    /* أزرار ونصوص عامة */
+    .btn-primary {
+      @apply bg-accent text-white font-medium py-2 px-4 rounded shadow hover:bg-opacity-90 transition;
+    }
+    .btn-tab {
+      @apply text-sm py-2 px-4 font-medium border-b-2 border-transparent hover:border-accent transition;
+    }
+    .btn-tab-active {
+      border-bottom-color: var(--clr-accent);
+      @apply text-accent font-semibold;
+    }
+    .toast {
+      @apply fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded shadow-md text-white text-sm text-center;
+      max-width: 80%;
+    }
+    .toast-success { background-color: var(--clr-toast-ok); }
+    .toast-error   { background-color: var(--clr-toast-err); }
+    .toast-info    { background-color: var(--clr-toast-info); }
+
+    /* بطاقات */
+    .card {
+      @apply bg-card-bg p-6 rounded-lg shadow-md;
+    }
+    /* جداول منسقة */
+    .styled-table {
+      @apply table-auto w-full border-collapse mt-4;
+    }
+    .styled-table th, .styled-table td {
+      @apply border border-clr-border px-4 py-2 text-center text-base;
+    }
+    .styled-table th {
+      @apply bg-gray-100 font-medium text-primary;
+    }
+    .styled-table tr:nth-child(even) {
+      @apply bg-gray-50;
+    }
+    .styled-table tr:hover {
+      @apply bg-gray-100;
+    }
+    /* Forms */
+    input, select {
+      @apply w-full mt-1 p-2 border border-clr-border rounded focus:ring-2 focus:ring-accent focus:outline-none text-sm;
+    }
+    .checkbox-group label {
+      @apply flex items-center gap-2 text-sm;
+    }
+    /* المودالات */
+    .modal-bg {
+      @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+    }
+    .modal-card {
+      @apply bg-white p-6 rounded-lg shadow-lg w-full max-w-md;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ===== HEADER ===== -->
   <header>
-    <img src="https://via.placeholder.com/200x40?text=شعار+المركز" alt="شعار المركز">
+    <img src="assets/logo.png" alt="شعار المركز" class="logo-img" />
     <h1>نظام مواعيد المركز</h1>
   </header>
 
-  <nav>
-    <button data-tab="children" class="active">الأطفال</button>
-    <button data-tab="specialists">الأخصائيون</button>
-    <button data-tab="appointments">المواعيد</button>
-    <button data-tab="reports">التقارير</button>
-  </nav>
+  <!-- ===== المحتوى الرئيسي ===== -->
+  <main class="container mx-auto px-4 py-6 space-y-8">
+    <div id="toast-container"></div>
 
-  <!-- 1) إدارة الأطفال -->
-  <section id="children" class="active">
-    <h2>١. إدارة الأطفال</h2>
-    <button onclick="openModal('child')">إضافة طفل</button>
-    <table id="tblChildren">
-      <thead>
-        <tr><th>#</th><th>اسم</th><th>بكيج</th><th>بدء</th><th>كلي</th><th>متبقي</th><th>حالة</th><th>إجراءات</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <!-- ===== تبويبات التنقل ===== -->
+    <nav class="flex gap-6 border-b-2 border-clr-border">
+      <button id="tab-children-btn" class="btn-tab btn-tab-active">الأطفال</button>
+      <button id="tab-specialists-btn" class="btn-tab">الأخصائيون</button>
+      <button id="tab-appointments-btn" class="btn-tab">المواعيد</button>
+      <button id="tab-reports-btn" class="btn-tab">التقارير</button>
+      <button id="tab-send-btn" class="btn-tab">إرسال جدول</button>
+    </nav>
 
-  <!-- 2) إدارة الأخصائيين -->
-  <section id="specialists">
-    <h2>٢. إدارة الأخصائيين</h2>
-    <button onclick="openModal('spec')">إضافة أخصائي</button>
-    <table id="tblSpecs">
-      <thead>
-        <tr><th>#</th><th>اسم</th><th>قسم</th><th>أيام</th><th>إجراءات</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <!-- ===== محتوى التبويبات ===== -->
+    <div class="space-y-8">
 
-  <!-- 3) حجز المواعيد -->
-  <section id="appointments">
-    <h2>٣. حجز المواعيد</h2>
-    <button onclick="autoScheduleAll()">جدولة تلقائية</button>
-    <table id="tblAppts">
-      <thead>
-        <tr>
-          <th>#</th><th>طفل</th><th>تاريخ</th><th>وقت</th>
-          <th>قسم</th><th>أخصائي</th><th>نوع</th><th>حالة</th><th>إجراءات</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+      <!-- TAB 1: إدارة الأطفال -->
+      <section id="tab-children">
+        <h2 class="text-xl font-semibold mb-4">1. إدارة الأطفال والاشتراكات</h2>
+        <div class="flex justify-start mb-4">
+          <button id="btn-add-child" class="btn-primary">إضافة طفل جديد</button>
+        </div>
+        <div class="card overflow-x-auto">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th class="w-8">#</th>
+                <th class="w-40">اسم الطفل</th>
+                <th class="w-32">نوع الاشتراك</th>
+                <th class="w-28">تاريخ البدء</th>
+                <th class="w-32">عدد الجلسات الكلي</th>
+                <th class="w-32">عدد الجلسات المتبقية</th>
+                <th class="w-28">حالة التوقف</th>
+                <th class="w-32">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-children-body"></tbody>
+          </table>
+        </div>
+      </section>
 
-  <!-- 4) التقارير -->
-  <section id="reports">
-    <h2>٤. التقارير</h2>
-    <div id="endingReport"></div>
-    <div id="pausedReport"></div>
-  </section>
+      <!-- TAB 2: إدارة الأخصائيين -->
+      <section id="tab-specialists" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">2. إدارة الأخصائيين</h2>
+        <div class="flex justify-start mb-4">
+          <button id="btn-add-specialist" class="btn-primary">إضافة أخصائي</button>
+        </div>
+        <div class="card overflow-x-auto">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th class="w-8">#</th>
+                <th class="w-32">الاسم</th>
+                <th class="w-48">البريد الإلكتروني</th>
+                <th class="w-32">القسم</th>
+                <th class="w-32">أيام العمل</th>
+                <th class="w-48">فترات العمل</th>
+                <th class="w-32">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-specialists-body"></tbody>
+          </table>
+        </div>
+      </section>
 
-  <!-- المودال الموحد -->
-  <div id="modal">
-    <div class="content">
-      <h3 id="modalTitle"></h3>
-      <form id="modalForm"></form>
-      <div style="text-align:left; margin-top:10px;">
-        <button onclick="saveModal(event)">حفظ</button>
-        <button onclick="closeModal(event)">إلغاء</button>
-      </div>
+      <!-- TAB 3: حجز المواعيد -->
+      <section id="tab-appointments" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">3. حجز المواعيد</h2>
+        <div class="flex justify-start mb-4">
+          <button id="btn-add-appointment" class="btn-primary">إدخال موعد جديد</button>
+        </div>
+        <div class="card overflow-x-auto">
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th class="w-8">#</th>
+                <th class="w-32">الطفل</th>
+                <th class="w-24">اليوم</th>
+                <th class="w-24">الوقت</th>
+                <th class="w-32">القسم</th>
+                <th class="w-32">الأخصائي</th>
+                <th class="w-32">نوع الحزمة</th>
+                <th class="w-24">الحالة</th>
+                <th class="w-40">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="table-appointments-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 4: التقارير الأسبوعية -->
+      <section id="tab-reports" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">4. التقارير الأسبوعية</h2>
+        <div class="card space-y-6">
+          <div>
+            <h3 class="font-semibold mb-2">أطفال على وشك انتهاء الاشتراك (جلستين أو أقل متبقيتان)</h3>
+            <ul id="report-expiring-children" class="list-disc list-inside text-sm text-gray-700"></ul>
+          </div>
+          <div>
+            <h3 class="font-semibold mb-2">أطفال في حالة توقف مؤقت</h3>
+            <ul id="report-paused-children" class="list-disc list-inside text-sm text-gray-700"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: إرسال جدول الأخصائي -->
+      <section id="tab-send" class="hidden">
+        <h2 class="text-xl font-semibold mb-4">5. إرسال جدول أخصائي</h2>
+        <div class="card max-w-md">
+          <div class="space-y-4">
+            <div>
+              <label for="send-filter-spec" class="block text-sm font-medium">اسم الأخصائي:</label>
+              <input type="text" id="send-filter-spec" placeholder="مثال: د. أحمد" />
+            </div>
+            <div>
+              <label for="email-spec" class="block text-sm font-medium">البريد الإلكتروني:</label>
+              <input type="email" id="email-spec" placeholder="example@gmail.com" />
+            </div>
+            <div>
+              <button id="btn-send-email" class="btn-primary">إرسال الجدول</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===== مودال إضافة / تعديل طفل ===== -->
+  <div id="modal-child" class="modal-bg hidden">
+    <div class="modal-card">
+      <h2 class="text-lg font-semibold mb-4">إضافة / تعديل طفل</h2>
+      <form id="form-modal-child" class="space-y-4">
+        <div>
+          <label for="modal-child-name" class="block text-sm font-medium">اسم الطفل:</label>
+          <input type="text" id="modal-child-name" placeholder="مثال: عمر" required />
+        </div>
+        <div>
+          <label for="modal-child-subtype" class="block text-sm font-medium">نوع الاشتراك:</label>
+          <select id="modal-child-subtype">
+            <option value="24">24 جلسة (8 زيارات)</option>
+            <option value="36">36 جلسة (12 زيارة)</option>
+            <option value="48">48 جلسة (16 زيارة)</option>
+            <option value="psych">جلسة نفسية (ساعة واحدة)</option>
+            <option value="iq-test">اختبار ذكاء (ساعتان)</option>
+            <option value="speech">تخاطب منفردة (ساعة واحدة)</option>
+          </select>
+        </div>
+        <div>
+          <label for="modal-child-start" class="block text-sm font-medium">تاريخ بدء الاشتراك:</label>
+          <input type="date" id="modal-child-start" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium">حالة التوقف المؤقت:</label>
+          <select id="modal-child-paused">
+            <option value="false">غير متوقف</option>
+            <option value="true">متوقف مؤقتًا</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-4 pt-4">
+          <button type="button" id="modal-child-cancel" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">إلغاء</button>
+          <button type="submit" class="btn-primary">حفظ الطفل</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <script>
-  /** ------ التخزين المحلي ------ **/
-  const S = {
-    children: JSON.parse(localStorage.getItem('children')||'{}'),
-    specialists: JSON.parse(localStorage.getItem('specialists')||'{}'),
-    appointments: JSON.parse(localStorage.getItem('appointments')||'{}'),
-  };
-  const packages = {
-    "24":{weekly:2,total:24,days:["Saturday","Wednesday"]},
-    "36":{weekly:3,total:36,days:["Saturday","Monday","Thursday"]},
-    "48":{weekly:4,total:48,days:["Saturday","Monday","Wednesday","Friday"]},
-    "psychology":{weekly:1,total:1,days:["Saturday"]},
-    "iq":{weekly:1,total:1,days:["Saturday"]}
-  };
-  const slots=["13:00","15:20","17:40"];
-  function sync(){ 
-    localStorage.setItem('children',JSON.stringify(S.children));
-    localStorage.setItem('specialists',JSON.stringify(S.specialists));
-    localStorage.setItem('appointments',JSON.stringify(S.appointments));
-  }
-
-  /** ------ تبويبات ------ **/
-  const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-  $$( 'nav button').forEach(b=>{
-    b.onclick=()=>{
-      $$('nav button').forEach(x=>x.classList.remove('active'));
-      $$('section').forEach(sec=>sec.classList.remove('active'));
-      b.classList.add('active');
-      $('#'+b.dataset.tab).classList.add('active');
-      if(b.dataset.tab==='reports') renderReports();
-    };
-  });
-
-  /** ------ إعادة العرض ------ **/
-  function renderChildren(){
-    let tb=$('#tblChildren tbody'); tb.innerHTML='';
-    Object.entries(S.children).forEach(([id,ch],i)=>{
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${ch.name}</td><td>${ch.package}</td><td>${ch.startDate}</td>
-        <td>${packages[ch.package].total}</td><td>${ch.remaining}</td><td>${ch.status}</td>
-        <td>
-          <button onclick="openModal('child','${id}')">تعديل</button>
-          <button onclick="deleteChild('${id}')">حذف</button>
-        </td>
-      </tr>`;
-    });
-  }
-  function renderSpecs(){
-    let tb=$('#tblSpecs tbody'); tb.innerHTML='';
-    Object.entries(S.specialists).forEach(([id,sp],i)=>{
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${sp.name}</td><td>${sp.section}</td><td>${sp.workingDays.join(',')}</td>
-        <td>
-          <button onclick="openModal('spec','${id}')">تعديل</button>
-          <button onclick="deleteSpec('${id}')">حذف</button>
-        </td>
-      </tr>`;
-    });
-  }
-  function renderAppts(){
-    let tb=$('#tblAppts tbody'); tb.innerHTML='';
-    Object.entries(S.appointments).forEach(([id,a],i)=>{
-      let ch=S.children[a.childId]?.name||'–';
-      let sp=S.specialists[a.specId]?.name||'–';
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${ch}</td><td>${a.date}</td><td>${a.time}</td>
-        <td>${a.section}</td><td>${sp}</td><td>${a.type}</td><td>${a.status}</td>
-        <td>
-          ${a.status==='scheduled'?`<button onclick="markAbsent('${id}')">غاب</button>`:''}
-          <button onclick="openModal('appt','${id}')">تعديل</button>
-          <button onclick="deleteAppt('${id}')">حذف</button>
-          ${a.status==='absent'?`<button onclick="makeup('${id}')">تعويض</button>`:''}
-        </td>
-      </tr>`;
-    });
-  }
-  function renderReports(){
-    let end=Object.values(S.children)
-      .filter(c=>c.status==='active'&&c.remaining<=packages[c.package].weekly)
-      .map(c=>`<li>${c.name} (${c.remaining})</li>`).join('')||'<li>لا أحد</li>';
-    let paused=Object.values(S.children)
-      .filter(c=>c.status==='paused')
-      .map(c=>`<li>${c.name}</li>`).join('')||'<li>لا أحد</li>';
-    $('#endingReport').innerHTML=`<h3>قريب الانتهاء:</h3><ul>${end}</ul>`;
-    $('#pausedReport').innerHTML=`<h3>متوقفون:</h3><ul>${paused}</ul>`;
-  }
-
-  /** ------ CRUD ------ **/
-  function deleteChild(id){
-    if(!confirm('حذف طفل؟'))return;
-    delete S.children[id]; sync(); renderChildren();
-  }
-  function deleteSpec(id){
-    if(!confirm('حذف أخصائي؟'))return;
-    delete S.specialists[id]; sync(); renderSpecs();
-  }
-  function deleteAppt(id){
-    if(!confirm('حذف موعد؟'))return;
-    let a=S.appointments[id];
-    if(a.type==='regular') S.children[a.childId].remaining++;
-    delete S.appointments[id]; sync(); renderAppts(); renderChildren();
-  }
-  function markAbsent(id){
-    S.appointments[id].status='absent';
-    S.children[S.appointments[id].childId].remaining++;
-    sync(); renderAppts(); renderChildren();
-  }
-  function makeup(id){ autoScheduleChild(S.appointments[id].childId,{type:'makeup'}); }
-
-  /** ------ مودال ------ **/
-  let mType,mId;
-  function openModal(type,id=null){
-    mType=type; mId=id;
-    $('#modalTitle').innerText=(id?'تعديل ':'إضافة ')+{child:'طفل',spec:'أخصائي',appt:'موعد'}[type];
-    let f=$('#modalForm'); f.innerHTML='';
-    let d=id?(type==='child'?S.children[id]:(type==='spec'?S.specialists[id]:S.appointments[id])):{};
-    if(type==='child'){
-      f.innerHTML=`
-        <label>اسم: <input name="name" value="${d.name||''}"/></label>
-        <label>بكيج:
-          <select name="package">
-            ${Object.keys(packages).map(k=>`<option ${k===d.package?'selected':''} value="${k}">${k}</option>`).join('')}
+  <!-- ===== مودال إضافة / تعديل أخصائي ===== -->
+  <div id="modal-specialist" class="modal-bg hidden">
+    <div class="modal-card">
+      <h2 class="text-lg font-semibold mb-4">إضافة / تعديل أخصائي</h2>
+      <form id="form-modal-specialist" class="space-y-4">
+        <div>
+          <label for="modal-spec-name" class="block text-sm font-medium">الاسم:</label>
+          <input type="text" id="modal-spec-name" placeholder="مثال: د. أحمد" required />
+        </div>
+        <div>
+          <label for="modal-spec-email" class="block text-sm font-medium">البريد الإلكتروني:</label>
+          <input type="email" id="modal-spec-email" placeholder="example@gmail.com" required />
+        </div>
+        <div>
+          <label for="modal-spec-dept" class="block text-sm font-medium">القسم:</label>
+          <select id="modal-spec-dept" required>
+            <option value="تعديل سلوك">تعديل سلوك</option>
+            <option value="تخاطب">تخاطب</option>
+            <option value="تنمية مهارات">تنمية مهارات</option>
+            <option value="جلسة نفسية">جلسة نفسية</option>
+            <option value="اختبار ذكاء">اختبار ذكاء</option>
           </select>
-        </label>
-        <label>بدء: <input type="date" name="startDate" value="${d.startDate||''}"/></label>
-        <label>حالة:
-          <select name="status">
-            <option ${d.status==='active'?'selected':''} value="active">نشط</option>
-            <option ${d.status==='paused'?'selected':''} value="paused">متوقف</option>
-          </select>
-        </label>`;
-    }
-    if(type==='spec'){
-      f.innerHTML=`
-        <label>اسم: <input name="name" value="${d.name||''}"/></label>
-        <label>قسم:
-          <select name="section">
-            <option value="speech">تخاطب</option>
-            <option value="behavior">سلوك</option>
-            <option value="skills">مهارات</option>
-            <option value="psychology">نفسية</option>
-            <option value="iq">ذكاء</option>
-          </select>
-        </label>
-        <label>أيام (مثل: Saturday,Monday):
-          <input name="workingDays" value="${(d.workingDays||[]).join(',')}"/>
-        </label>`;
-    }
-    if(type==='appt'){
-      f.innerHTML=`
-        <label>طفل:
-          <select name="childId">
-            ${Object.entries(S.children).map(([cid,ch])=>`<option ${cid===d.childId?'selected':''} value="${cid}">${ch.name}</option>`).join('')}
-          </select>
-        </label>
-        <label>قسم:
-          <select name="section">
-            ${Object.keys(packages).map(k=>`<option ${k===d.section?'selected':''} value="${k}">${k}</option>`).join('')}
-          </select>
-        </label>
-        <label>تاريخ: <input type="date" name="date" value="${d.date||''}"/></label>
-        <label>وقت:
-          <select name="time">
-            ${slots.map(t=>`<option ${t===d.time?'selected':''} value="${t}">${t}</option>`).join('')}
-          </select>
-        </label>
-        <label>نوع:
-          <select name="type">
-            <option ${d.type==='regular'?'selected':''} value="regular">عادي</option>
-            <option ${d.type==='makeup'?'selected':''} value="makeup">تعويض</option>
-          </select>
-        </label>`;
-    }
-    $('#modal').style.display='flex';
-  }
-  function closeModal(e){ e.preventDefault(); $('#modal').style.display='none'; }
-  function saveModal(e){
-    e.preventDefault();
-    let fm=new FormData($('#modalForm')), o={};
-    for(let [k,v] of fm.entries()) o[k]=v;
-    if(mType==='child'){
-      if(!mId){ mId=Date.now().toString(); o.remaining=packages[o.package].total; }
-      S.children[mId]=o; renderChildren();
-    }
-    if(mType==='spec'){
-      if(!mId) mId=Date.now().toString();
-      o.workingDays=o.workingDays.split(',').map(x=>x.trim());
-      S.specialists[mId]=o; renderSpecs();
-    }
-    if(mType==='appt'){
-      if(!mId){
-        mId=Date.now().toString();
-        if(o.type==='regular') S.children[o.childId].remaining--;
-      }
-      S.appointments[mId]={...o,status:'scheduled'}; renderAppts(); renderChildren();
-    }
-    sync(); closeModal(e);
-  }
-
-  /** ------ الجدولة التلقائية ------ **/
-  function nextDate(day){
-    const map={Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
-    let t=new Date(), d=(map[day]-t.getDay()+7)%7||7;
-    let r=new Date(t.getFullYear(),t.getMonth(),t.getDate()+d);
-    return r.toISOString().split('T')[0];
-  }
-  function autoScheduleChild(cid,opts={type:'regular'}){
-    let ch=S.children[cid], pkg=packages[ch.package], need=pkg.weekly;
-    for(let day of pkg.days){
-      if(need===0)break;
-      let date=nextDate(day);
-      for(let time of slots){
-        if(need===0)break;
-        let entry=Object.entries(S.specialists).find(([i,sp])=>sp.section===ch.package && sp.workingDays.includes(day));
-        if(!entry) continue;
-        let [spid]=entry;
-        if(Object.values(S.appointments).some(a=>a.specId===spid && a.date===date && a.time===time)) continue;
-        let aid=Date.now().toString()+Math.random();
-        S.appointments[aid]={childId:cid,specId:spid,section:ch.package,date,time,type:opts.type,status:'scheduled'};
-        if(opts.type==='regular'){ ch.remaining--; need--; }
-      }
-    }
-    sync(); renderAppts(); renderChildren();
-  }
-  function autoScheduleAll(){
-    Object.keys(S.children).forEach(cid=>{
-      if(S.children[cid].status==='active') autoScheduleChild(cid);
-    });
-  }
-
-  // بدء العرض
-  renderChildren(); renderSpecs(); renderAppts();
-  </script>
-
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>نظام مواعيد المركز</title>
-  <style>
-    /* ===== ألوان الهوية ===== */
-    :root {
-      --dark: #142445;
-      --accent: #8bd5c8;
-      --bg: #f9f1e5;
-      --text: #333;
-    }
-    body { margin:0; font-family:'Tajawal',sans-serif; background:var(--bg); color:var(--text); }
-    header { background:var(--dark); color:#fff; display:flex; align-items:center; padding:10px; }
-    header img { height:40px; margin-left:10px; }
-    header h1 { font-size:1.5rem; }
-    nav { display:flex; background:#fff; border-bottom:2px solid var(--accent); }
-    nav button { flex:1; padding:10px; border:none; background:none; cursor:pointer; color:var(--dark); }
-    nav button.active, nav button:hover { background:var(--accent); }
-    section { display:none; padding:20px; }
-    section.active { display:block; }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border:1px solid #ccc; padding:8px; text-align:center; }
-    th { background:var(--accent); }
-    button { padding:6px 12px; margin:4px; cursor:pointer; }
-    /* مودال مركزي */
-    #modal { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; }
-    #modal .content { background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px; }
-    #modal label { display:block; margin:8px 0; }
-    #modal input, #modal select { width:100%; padding:6px; }
-  </style>
-</head>
-<body>
-
-  <header>
-    <img src="https://via.placeholder.com/200x40?text=شعار+المركز" alt="شعار المركز">
-    <h1>نظام مواعيد المركز</h1>
-  </header>
-
-  <nav>
-    <button data-tab="children" class="active">الأطفال</button>
-    <button data-tab="specialists">الأخصائيون</button>
-    <button data-tab="appointments">المواعيد</button>
-    <button data-tab="reports">التقارير</button>
-  </nav>
-
-  <!-- 1) إدارة الأطفال -->
-  <section id="children" class="active">
-    <h2>١. إدارة الأطفال</h2>
-    <button onclick="openModal('child')">إضافة طفل</button>
-    <table id="tblChildren">
-      <thead>
-        <tr><th>#</th><th>اسم</th><th>بكيج</th><th>بدء</th><th>كلي</th><th>متبقي</th><th>حالة</th><th>إجراءات</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- 2) إدارة الأخصائيين -->
-  <section id="specialists">
-    <h2>٢. إدارة الأخصائيين</h2>
-    <button onclick="openModal('spec')">إضافة أخصائي</button>
-    <table id="tblSpecs">
-      <thead>
-        <tr><th>#</th><th>اسم</th><th>قسم</th><th>أيام</th><th>إجراءات</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- 3) حجز المواعيد -->
-  <section id="appointments">
-    <h2>٣. حجز المواعيد</h2>
-    <button onclick="autoScheduleAll()">جدولة تلقائية</button>
-    <table id="tblAppts">
-      <thead>
-        <tr>
-          <th>#</th><th>طفل</th><th>تاريخ</th><th>وقت</th>
-          <th>قسم</th><th>أخصائي</th><th>نوع</th><th>حالة</th><th>إجراءات</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
-
-  <!-- 4) التقارير -->
-  <section id="reports">
-    <h2>٤. التقارير</h2>
-    <div id="endingReport"></div>
-    <div id="pausedReport"></div>
-  </section>
-
-  <!-- المودال الموحد -->
-  <div id="modal">
-    <div class="content">
-      <h3 id="modalTitle"></h3>
-      <form id="modalForm"></form>
-      <div style="text-align:left; margin-top:10px;">
-        <button onclick="saveModal(event)">حفظ</button>
-        <button onclick="closeModal(event)">إلغاء</button>
-      </div>
+        </div>
+        <div>
+          <label for="modal-spec-days" class="block text-sm font-medium">أيام العمل (مفصولة بفواصل):</label>
+          <input type="text" id="modal-spec-days" placeholder="السبت، الأحد، ..." required />
+        </div>
+        <div>
+          <label for="modal-spec-times" class="block text-sm font-medium">فترات العمل (مفصولة بفواصل):</label>
+          <input type="text" id="modal-spec-times" placeholder="1:00-1:40،1:40-2:20، ..." required />
+        </div>
+        <div class="flex justify-end gap-4 pt-4">
+          <button type="button" id="modal-spec-cancel" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">إلغاء</button>
+          <button type="submit" class="btn-primary">حفظ الأخصائي</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <script>
-  /** ------ التخزين المحلي ------ **/
-  const S = {
-    children: JSON.parse(localStorage.getItem('children')||'{}'),
-    specialists: JSON.parse(localStorage.getItem('specialists')||'{}'),
-    appointments: JSON.parse(localStorage.getItem('appointments')||'{}'),
-  };
-  const packages = {
-    "24":{weekly:2,total:24,days:["Saturday","Wednesday"]},
-    "36":{weekly:3,total:36,days:["Saturday","Monday","Thursday"]},
-    "48":{weekly:4,total:48,days:["Saturday","Monday","Wednesday","Friday"]},
-    "psychology":{weekly:1,total:1,days:["Saturday"]},
-    "iq":{weekly:1,total:1,days:["Saturday"]}
-  };
-  const slots=["13:00","15:20","17:40"];
-  function sync(){ 
-    localStorage.setItem('children',JSON.stringify(S.children));
-    localStorage.setItem('specialists',JSON.stringify(S.specialists));
-    localStorage.setItem('appointments',JSON.stringify(S.appointments));
-  }
-
-  /** ------ تبويبات ------ **/
-  const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
-  $$( 'nav button').forEach(b=>{
-    b.onclick=()=>{
-      $$('nav button').forEach(x=>x.classList.remove('active'));
-      $$('section').forEach(sec=>sec.classList.remove('active'));
-      b.classList.add('active');
-      $('#'+b.dataset.tab).classList.add('active');
-      if(b.dataset.tab==='reports') renderReports();
-    };
-  });
-
-  /** ------ إعادة العرض ------ **/
-  function renderChildren(){
-    let tb=$('#tblChildren tbody'); tb.innerHTML='';
-    Object.entries(S.children).forEach(([id,ch],i)=>{
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${ch.name}</td><td>${ch.package}</td><td>${ch.startDate}</td>
-        <td>${packages[ch.package].total}</td><td>${ch.remaining}</td><td>${ch.status}</td>
-        <td>
-          <button onclick="openModal('child','${id}')">تعديل</button>
-          <button onclick="deleteChild('${id}')">حذف</button>
-        </td>
-      </tr>`;
-    });
-  }
-  function renderSpecs(){
-    let tb=$('#tblSpecs tbody'); tb.innerHTML='';
-    Object.entries(S.specialists).forEach(([id,sp],i)=>{
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${sp.name}</td><td>${sp.section}</td><td>${sp.workingDays.join(',')}</td>
-        <td>
-          <button onclick="openModal('spec','${id}')">تعديل</button>
-          <button onclick="deleteSpec('${id}')">حذف</button>
-        </td>
-      </tr>`;
-    });
-  }
-  function renderAppts(){
-    let tb=$('#tblAppts tbody'); tb.innerHTML='';
-    Object.entries(S.appointments).forEach(([id,a],i)=>{
-      let ch=S.children[a.childId]?.name||'–';
-      let sp=S.specialists[a.specId]?.name||'–';
-      tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td><td>${ch}</td><td>${a.date}</td><td>${a.time}</td>
-        <td>${a.section}</td><td>${sp}</td><td>${a.type}</td><td>${a.status}</td>
-        <td>
-          ${a.status==='scheduled'?`<button onclick="markAbsent('${id}')">غاب</button>`:''}
-          <button onclick="openModal('appt','${id}')">تعديل</button>
-          <button onclick="deleteAppt('${id}')">حذف</button>
-          ${a.status==='absent'?`<button onclick="makeup('${id}')">تعويض</button>`:''}
-        </td>
-      </tr>`;
-    });
-  }
-  function renderReports(){
-    let end=Object.values(S.children)
-      .filter(c=>c.status==='active'&&c.remaining<=packages[c.package].weekly)
-      .map(c=>`<li>${c.name} (${c.remaining})</li>`).join('')||'<li>لا أحد</li>';
-    let paused=Object.values(S.children)
-      .filter(c=>c.status==='paused')
-      .map(c=>`<li>${c.name}</li>`).join('')||'<li>لا أحد</li>';
-    $('#endingReport').innerHTML=`<h3>قريب الانتهاء:</h3><ul>${end}</ul>`;
-    $('#pausedReport').innerHTML=`<h3>متوقفون:</h3><ul>${paused}</ul>`;
-  }
-
-  /** ------ CRUD ------ **/
-  function deleteChild(id){
-    if(!confirm('حذف طفل؟'))return;
-    delete S.children[id]; sync(); renderChildren();
-  }
-  function deleteSpec(id){
-    if(!confirm('حذف أخصائي؟'))return;
-    delete S.specialists[id]; sync(); renderSpecs();
-  }
-  function deleteAppt(id){
-    if(!confirm('حذف موعد؟'))return;
-    let a=S.appointments[id];
-    if(a.type==='regular') S.children[a.childId].remaining++;
-    delete S.appointments[id]; sync(); renderAppts(); renderChildren();
-  }
-  function markAbsent(id){
-    S.appointments[id].status='absent';
-    S.children[S.appointments[id].childId].remaining++;
-    sync(); renderAppts(); renderChildren();
-  }
-  function makeup(id){ autoScheduleChild(S.appointments[id].childId,{type:'makeup'}); }
-
-  /** ------ مودال ------ **/
-  let mType,mId;
-  function openModal(type,id=null){
-    mType=type; mId=id;
-    $('#modalTitle').innerText=(id?'تعديل ':'إضافة ')+{child:'طفل',spec:'أخصائي',appt:'موعد'}[type];
-    let f=$('#modalForm'); f.innerHTML='';
-    let d=id?(type==='child'?S.children[id]:(type==='spec'?S.specialists[id]:S.appointments[id])):{};
-    if(type==='child'){
-      f.innerHTML=`
-        <label>اسم: <input name="name" value="${d.name||''}"/></label>
-        <label>بكيج:
-          <select name="package">
-            ${Object.keys(packages).map(k=>`<option ${k===d.package?'selected':''} value="${k}">${k}</option>`).join('')}
+  <!-- ===== مودال إضافة / تعديل موعد ===== -->
+  <div id="modal-appointment" class="modal-bg hidden">
+    <div class="modal-card">
+      <h2 class="text-lg font-semibold mb-4">إضافة / تعديل موعد</h2>
+      <form id="form-modal-appointment" class="space-y-4">
+        <div>
+          <label for="modal-appt-child" class="block text-sm font-medium">اختر الطفل:</label>
+          <select id="modal-appt-child" required>
+            <!-- سيمتلئ عبر app.js -->
           </select>
-        </label>
-        <label>بدء: <input type="date" name="startDate" value="${d.startDate||''}"/></label>
-        <label>حالة:
-          <select name="status">
-            <option ${d.status==='active'?'selected':''} value="active">نشط</option>
-            <option ${d.status==='paused'?'selected':''} value="paused">متوقف</option>
+        </div>
+        <div>
+          <label for="modal-appt-day" class="block text-sm font-medium">اليوم:</label>
+          <select id="modal-appt-day" required>
+            <option>السبت</option>
+            <option>الأحد</option>
+            <option>الاثنين</option>
+            <option>الثلاثاء</option>
+            <option>الأربعاء</option>
+            <option>الخميس</option>
           </select>
-        </label>`;
-    }
-    if(type==='spec'){
-      f.innerHTML=`
-        <label>اسم: <input name="name" value="${d.name||''}"/></label>
-        <label>قسم:
-          <select name="section">
-            <option value="speech">تخاطب</option>
-            <option value="behavior">سلوك</option>
-            <option value="skills">مهارات</option>
-            <option value="psychology">نفسية</option>
-            <option value="iq">ذكاء</option>
+        </div>
+        <div>
+          <label for="modal-appt-time" class="block text-sm font-medium">الوقت:</label>
+          <select id="modal-appt-time" required>
+            <option>1:00 - 1:40</option>
+            <option>1:40 - 2:20</option>
+            <option>2:20 - 3:00</option>
+            <option>3:20 - 4:00</option>
+            <option>4:00 - 4:40</option>
+            <option>4:40 - 5:20</option>
+            <option>5:20 - 6:00</option>
+            <option>6:00 - 6:40</option>
+            <option>6:40 - 7:20</option>
+            <option>7:20 - 8:00</option>
+            <option>8:00 - 8:40</option>
+            <option>8:40 - 9:20</option>
           </select>
-        </label>
-        <label>أيام (مثل: Saturday,Monday):
-          <input name="workingDays" value="${(d.workingDays||[]).join(',')}"/>
-        </label>`;
-    }
-    if(type==='appt'){
-      f.innerHTML=`
-        <label>طفل:
-          <select name="childId">
-            ${Object.entries(S.children).map(([cid,ch])=>`<option ${cid===d.childId?'selected':''} value="${cid}">${ch.name}</option>`).join('')}
+        </div>
+        <div>
+          <label class="block text-sm font-medium">القسم:</label>
+          <select id="modal-appt-dept" required>
+            <option value="">-- اختر القسم --</option>
+            <option value="تعديل سلوك">تعديل سلوك</option>
+            <option value="تخاطب">تخاطب</option>
+            <option value="تنمية مهارات">تنمية مهارات</option>
+            <option value="جلسة نفسية">جلسة نفسية</option>
+            <option value="اختبار ذكاء">اختبار ذكاء</option>
           </select>
-        </label>
-        <label>قسم:
-          <select name="section">
-            ${Object.keys(packages).map(k=>`<option ${k===d.section?'selected':''} value="${k}">${k}</option>`).join('')}
+        </div>
+        <div>
+          <label for="modal-appt-spec" class="block text-sm font-medium">الأخصائي (اكتب الاسم يدويًا):</label>
+          <input type="text" id="modal-appt-spec" placeholder="مثال: د. أحمد" required />
+        </div>
+        <div>
+          <label for="modal-appt-type" class="block text-sm font-medium">نوع الموعد:</label>
+          <select id="modal-appt-type">
+            <option value="regular">عادي</option>
+            <option value="makeup">تعويض</option>
           </select>
-        </label>
-        <label>تاريخ: <input type="date" name="date" value="${d.date||''}"/></label>
-        <label>وقت:
-          <select name="time">
-            ${slots.map(t=>`<option ${t===d.time?'selected':''} value="${t}">${t}</option>`).join('')}
-          </select>
-        </label>
-        <label>نوع:
-          <select name="type">
-            <option ${d.type==='regular'?'selected':''} value="regular">عادي</option>
-            <option ${d.type==='makeup'?'selected':''} value="makeup">تعويض</option>
-          </select>
-        </label>`;
-    }
-    $('#modal').style.display='flex';
-  }
-  function closeModal(e){ e.preventDefault(); $('#modal').style.display='none'; }
-  function saveModal(e){
-    e.preventDefault();
-    let fm=new FormData($('#modalForm')), o={};
-    for(let [k,v] of fm.entries()) o[k]=v;
-    if(mType==='child'){
-      if(!mId){ mId=Date.now().toString(); o.remaining=packages[o.package].total; }
-      S.children[mId]=o; renderChildren();
-    }
-    if(mType==='spec'){
-      if(!mId) mId=Date.now().toString();
-      o.workingDays=o.workingDays.split(',').map(x=>x.trim());
-      S.specialists[mId]=o; renderSpecs();
-    }
-    if(mType==='appt'){
-      if(!mId){
-        mId=Date.now().toString();
-        if(o.type==='regular') S.children[o.childId].remaining--;
-      }
-      S.appointments[mId]={...o,status:'scheduled'}; renderAppts(); renderChildren();
-    }
-    sync(); closeModal(e);
-  }
+        </div>
+        <div class="flex justify-end gap-4 pt-4">
+          <button type="button" id="modal-appt-cancel" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">إلغاء</button>
+          <button type="submit" class="btn-primary">حفظ الموعد</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-  /** ------ الجدولة التلقائية ------ **/
-  function nextDate(day){
-    const map={Sunday:0,Monday:1,Tuesday:2,Wednesday:3,Thursday:4,Friday:5,Saturday:6};
-    let t=new Date(), d=(map[day]-t.getDay()+7)%7||7;
-    let r=new Date(t.getFullYear(),t.getMonth(),t.getDate()+d);
-    return r.toISOString().split('T')[0];
-  }
-  function autoScheduleChild(cid,opts={type:'regular'}){
-    let ch=S.children[cid], pkg=packages[ch.package], need=pkg.weekly;
-    for(let day of pkg.days){
-      if(need===0)break;
-      let date=nextDate(day);
-      for(let time of slots){
-        if(need===0)break;
-        let entry=Object.entries(S.specialists).find(([i,sp])=>sp.section===ch.package && sp.workingDays.includes(day));
-        if(!entry) continue;
-        let [spid]=entry;
-        if(Object.values(S.appointments).some(a=>a.specId===spid && a.date===date && a.time===time)) continue;
-        let aid=Date.now().toString()+Math.random();
-        S.appointments[aid]={childId:cid,specId:spid,section:ch.package,date,time,type:opts.type,status:'scheduled'};
-        if(opts.type==='regular'){ ch.remaining--; need--; }
-      }
-    }
-    sync(); renderAppts(); renderChildren();
-  }
-  function autoScheduleAll(){
-    Object.keys(S.children).forEach(cid=>{
-      if(S.children[cid].status==='active') autoScheduleChild(cid);
-    });
-  }
-
-  // بدء العرض
-  renderChildren(); renderSpecs(); renderAppts();
-  </script>
-
+  <!-- ===== ربط ملف الجافاسكربت ===== -->
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
